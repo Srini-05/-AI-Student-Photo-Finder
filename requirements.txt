@@ -1,6 +1,7 @@
 flask
 flask-cors
 face-recognition
+face-recognition-models
 opencv-python
 numpy
 pandas
