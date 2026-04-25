@@ -27,5 +27,5 @@ RUN mkdir -p final_year graduation output unknown
 # Expose the port
 EXPOSE 8080
 
-# Start the application
-CMD ["python", "app.py"]
+# Start the application with gunicorn for production performance
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "600", "app:app"]
