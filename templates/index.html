@@ -128,47 +128,79 @@
                     </div>
                 </div>
 
-                <div class="glass-card p-0 overflow-hidden">
-                    <div class="p-4 py-3 d-flex justify-content-between align-items-center bg-glass-header">
-                        <h5 class="fw-800 m-0 small tracking-wider"><i class="fas fa-stream me-2 text-primary"></i>SYSTEM LOGS</h5>
-                        <div id="statusIndicator" class="badge-status">READY</div>
-                    </div>
-                    <div id="logStream" class="log-viewport">
-                        <div class="log-entry system">
-                            <span class="log-time">System</span>
-                            <span class="log-msg">Waiting for data ingestion...</span>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Right Panel: Results -->
             <div class="col-xl-8 col-lg-7">
-                <div class="glass-card h-100 p-0 overflow-hidden">
+                <div class="glass-card p-0 overflow-hidden">
                     <div class="p-4 py-3 d-flex justify-content-between align-items-center bg-glass-header">
                         <div>
-                            <h5 class="fw-800 m-0 small tracking-wider"><i class="fas fa-eye me-2 text-primary"></i>NEURAL IDENTIFICATION FEED</h5>
+                            <h5 class="fw-800 m-0 small tracking-wider"><i class="fas fa-stream me-2 text-primary"></i>SYSTEM NEURAL LOGS</h5>
                         </div>
-                        <div class="d-flex gap-2">
-                            <span class="badge bg-glass-tag" id="accuracyIndicator">Accuracy: 98.4%</span>
-                            <button class="glass-btn btn-sm" onclick="clearFeed()"><i class="fas fa-sync-alt"></i></button>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div id="statusIndicator" class="badge-status me-2">READY</div>
+                            <span class="badge bg-glass-tag" id="accuracyIndicator">Precision: 98.4%</span>
                         </div>
                     </div>
-                    <div id="resultsFeed" class="results-viewport">
-                        <!-- Placeholder -->
-                        <div class="empty-state">
-                            <div class="empty-icon-wrap">
-                                <i class="fas fa-cube"></i>
-                            </div>
-                            <h4 class="fw-800">No Active Processing</h4>
-                            <p class="text-muted px-4">Upload datasets and initiate the engine to see real-time student matches populated here.</p>
+                    <div id="logStream" class="log-viewport" style="height: 600px;">
+                        <div class="log-entry system">
+                            <span class="log-time">System Initiation</span>
+                            <span class="log-msg text-primary fw-bold">Neural Engine v2.5.0 Standby...</span>
+                        </div>
+                        <div class="log-entry warning">
+                            <span class="log-time">Status</span>
+                            <span class="log-msg">Please ingest dataset folders to begin batch identification.</span>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
 
+        <hr class="my-5 opacity-10">
+
+        <!-- Neural Workflow Sequence -->
+        <section class="mt-5 pt-4">
+            <div class="glass-card p-5">
+                <div class="text-center mb-5">
+                    <h2 class="fw-800 tracking-wider">NEURAL WORKFLOW SEQUENCE</h2>
+                    <p class="text-muted">Understand the advanced logic behind the Student Photo Finder engine.</p>
+                </div>
+                
+                <div class="row g-4 justify-content-center">
+                    <div class="col-md-3">
+                        <div class="workflow-step text-center">
+                            <div class="step-blob"><i class="fas fa-id-badge"></i></div>
+                            <h6 class="fw-800 mt-3">01. REFERENCE</h6>
+                            <p class="small opacity-75">Upload student portraits to train the neural model.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-none d-md-flex align-items-center justify-content-center opacity-25">
+                        <i class="fas fa-chevron-right fa-2x"></i>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="workflow-step text-center">
+                            <div class="step-blob blob-accent"><i class="fas fa-images"></i></div>
+                            <h6 class="fw-800 mt-3">02. BATCH SCAN</h6>
+                            <p class="small opacity-75">AI scans unsorted graduation photos for facial markers.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-none d-md-flex align-items-center justify-content-center opacity-25">
+                        <i class="fas fa-chevron-right fa-2x"></i>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="workflow-step text-center">
+                            <div class="step-blob blob-primary"><i class="fas fa-folder-plus"></i></div>
+                            <h6 class="fw-800 mt-3">03. AUTO-SORT</h6>
+                            <p class="small opacity-75">Photos are moved into student-named folders instantly.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Footer -->
+        <footer class="text-center mt-5 mb-4 footer-premium">
+            <div class="footer-wrap container">
                 <div class="mb-2">
                     <span class="small fw-600 opacity-50">POWER BY</span>
                     <div class="brand-text-large fw-800 mt-1">DREAM WORLD PHOTOGRAPHY</div>
@@ -183,16 +215,28 @@
         </footer>
     </div>
 
-    <!-- Modals / Toast -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div id="statusToast" class="toast glass-toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-transparent border-0 text-white">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong class="me-auto">Notification</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body" id="toastMsg">
-                System initialized successfully.
+    </div>
+    
+    <!-- Neural Confirmation Modal -->
+    <div class="modal fade" id="neuralModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-800 tracking-wider" id="modalTitle">NEURAL CONFIRMATION</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="text-center mb-4">
+                        <div class="step-blob blob-accent mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                            <i id="modalIcon" class="fas fa-bolt"></i>
+                        </div>
+                        <p id="modalBody" class="px-3">Are you ready to initiate the neural engine? This will begin high-precision facial classification on your dataset.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 justify-content-center pb-4">
+                    <button type="button" class="secondary-btn px-4" data-bs-dismiss="modal">CANCEL</button>
+                    <button type="button" id="confirmBtn" class="primary-btn glow px-4 py-2">PROCEED</button>
+                </div>
             </div>
         </div>
     </div>

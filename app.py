@@ -8,9 +8,10 @@ import shutil
 import time
 import threading
 import zipfile
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 from werkzeug.utils import secure_filename
-from concurrent.futures import ThreadPoolExecutor
 
 # Monkey-patch pkg_resources for Python 3.13 compatibility
 try:
@@ -24,6 +25,7 @@ except ImportError:
     sys.modules['pkg_resources'] = MockPkgResources()
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB upload limit
 
 # CONFIGURATIONS
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -103,8 +105,12 @@ def load_and_encode_faces():
     files = [f for f in os.listdir(FINAL_YEAR_DIR) if allowed_file(f)]
     log_message(f"Initializing Neural Engine with {len(files)} reference records...", "warning")
     
-    for filename in files:
+    for index, filename in enumerate(files):
         path = os.path.join(FINAL_YEAR_DIR, filename)
+        stats["status_text"] = f"Training: {index+1}/{len(files)}"
+        if (index + 1) % 5 == 0 or index == 0:
+            log_message(f"Neural signature extraction: {index+1}/{len(files)} students loaded...", "info")
+            
         try:
             image = face_recognition.load_image_file(path)
             encodings = face_recognition.face_encodings(image)
@@ -114,7 +120,7 @@ def load_and_encode_faces():
         except Exception as e:
             log_message(f"Failed to encode {filename}: {str(e)}", "danger")
     
-    log_message(f"Success: {len(cached_roll_numbers)} neural signatures loaded.", "success")
+    log_message(f"READY: {len(cached_roll_numbers)} neural signatures fully trained. Starting batch identification...", "success")
 
 def process_single_photo(filename, roll_counts, current_index, total_count):
     """Optimized processing with duplicate prevention and best-match logic."""
@@ -229,8 +235,9 @@ def process_batch():
 
     duration = round(time.time() - start_time, 2)
     stats["time"] = f"{duration}s"
-    stats["status_text"] = "Task Completed"
+    stats["status_text"] = "Process Completed"
     log_message(f"BATCH COMPLETE: Processed {stats['total']} items in {stats['time']}.", "success")
+    log_message("REID READY: Neural processing complete! Download your sorted ZIP archive now.", "info")
     is_processing = False
 
 @app.route('/start_processing', methods=['POST'])

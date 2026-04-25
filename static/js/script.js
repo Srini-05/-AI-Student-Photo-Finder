@@ -5,9 +5,27 @@ let lastKnownMatchCount = 0;
 function showToast(msg, type = "primary") {
     const toast = document.getElementById('statusToast');
     const msgEl = document.getElementById('toastMsg');
+    if (!msgEl) return;
     msgEl.innerHTML = msg;
     const bsToast = new bootstrap.Toast(toast);
     bsToast.show();
+}
+
+function showConfirm(title, body, icon, onConfirm) {
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalBody').innerText = body;
+    document.getElementById('modalIcon').className = `fas ${icon}`;
+    
+    const confirmBtn = document.getElementById('confirmBtn');
+    const newBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+    
+    const modal = new bootstrap.Modal(document.getElementById('neuralModal'));
+    newBtn.addEventListener('click', () => {
+        modal.hide();
+        onConfirm();
+    });
+    modal.show();
 }
 
 async function uploadFolder(target) {
@@ -32,11 +50,13 @@ async function uploadFolder(target) {
         });
         const data = await response.json();
         
+        if (!response.ok) throw new Error(data.error || `Server responded with ${response.status}`);
+
         status.innerHTML = `<i class="fas fa-check-circle me-2"></i>Successfully synced ${data.count} photos`;
         status.className = "small mt-2 text-success fw-600";
         return data.count || 0;
     } catch (error) {
-        status.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Upload failed`;
+        status.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Upload failed: ${error.message}`;
         status.className = "small mt-2 text-danger fw-600";
         console.error("Upload error:", error);
         return 0;
@@ -46,25 +66,21 @@ async function uploadFolder(target) {
 async function startAI() {
     if (isProcessing) return;
 
-    const refCount = await uploadFolder('final_year');
-    const gradCount = await uploadFolder('graduation');
-
-    // Start background processing
-    const response = await fetch('/start_processing', { method: 'POST' });
-    const data = await response.json();
-
-    if (data.error) {
-        showToast(data.error, "danger");
-        return;
-    }
-
-    // Enter UI processing state
-    isProcessing = true;
-    document.getElementById('resultsFeed').innerHTML = ''; // Clear feed for new run
-    document.getElementById('statusIndicator').innerText = "RUNNING";
-    document.getElementById('statusIndicator').classList.add('bg-primary');
-    
-    pollStatus();
+    showConfirm(
+        "INITIATE NEURAL SCAN",
+        "Are you ready to begin the facial identification engine? Your datasets have been synced and processed in the background.",
+        "fa-bolt",
+        async () => {
+            const response = await fetch('/start_processing', { method: 'POST' });
+            const data = await response.json();
+            if (data.error) { showToast(data.error, "danger"); return; }
+            
+            isProcessing = true;
+            document.getElementById('logStream').innerHTML = ''; // Fresh logs for the run
+            document.getElementById('statusIndicator').innerText = "RUNNING";
+            pollStatus();
+        }
+    );
 }
 
 async function pollStatus() {
@@ -122,16 +138,40 @@ function updateLogs(logs) {
             // If it's a match, we might want to check the server for new files usually, 
             // but for this demo we'll let the user see the folder later or optimize refresh.
             if (log.msg.includes('MATCH:')) {
-                refreshResults();
+                // Parse "MATCH: [Name] found in [Photo]"
+                const parts = log.msg.split(' ');
+                const studentName = parts[1];
+                const photoName = parts[parts.length - 1]; // Last part is the filename
+                addMatchToFeed(studentName, photoName);
             }
         }
     });
 }
 
-function refreshResults() {
-    // This is called when a match is logged.
-    // Instead of re-fetching everything, we can just fetch the latest output folder files occasionally.
-    // In a high-perf app, we'd use WebSockets for this.
+function addMatchToFeed(studentName, photoName) {
+    const feed = document.getElementById('resultsFeed');
+    
+    // Remove empty state if it exists
+    const emptyState = feed.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    const card = document.createElement('div');
+    card.className = 'match-card-entry glass-inner p-3 mb-3 animate__animated animate__fadeInRight';
+    card.innerHTML = `
+        <div class="d-flex align-items-center gap-3">
+            <div class="match-icon bg-soft-success">
+                <i class="fas fa-check-circle text-success"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="small text-muted opacity-50 tracking-wider">STUDENT MATCHED</div>
+                <h6 class="fw-800 m-0">${studentName}</h6>
+                <div class="small opacity-75 mt-1"><i class="fas fa-image me-1"></i>Found in: <b>${photoName}</b></div>
+            </div>
+            <div class="badge bg-soft-primary">Live Ident</div>
+        </div>
+    `;
+    
+    feed.prepend(card); // Show newest at top
 }
 
 async function finishProcessing() {
@@ -156,21 +196,29 @@ async function loadFinalGallery() {
 }
 
 async function resetAll() {
-    if (!confirm("Are you sure you want to clear the neural memory? (Files will NOT be deleted from the server)")) return;
-    
-    try {
-        const response = await fetch('/reset', { method: 'POST' });
-        const result = await response.json();
-        showToast(result.message);
-        clearFeed();
-        updateStats();
-    } catch (error) {
-        showToast("Reset failed: " + error);
-    }
+    showConfirm(
+        "RESET ENGINE",
+        "Are you sure you want to clear the neural memory and session logs? Processed files will remain in your output folder.",
+        "fa-history",
+        async () => {
+            try {
+                const response = await fetch('/reset', { method: 'POST' });
+                const result = await response.json();
+                showToast(result.message);
+                clearFeed();
+                updateStats();
+            } catch (error) { showToast("Reset failed: " + error); }
+        }
+    );
 }
 
 function downloadAll() {
-    window.location.href = '/download_results';
+    showConfirm(
+        "DOWNLOAD ARCHIVE",
+        "Neural sorting is complete. Would you like to generate and download a ZIP archive of all sorted results?",
+        "fa-download",
+        () => { window.location.href = '/download_results'; }
+    );
 }
 
 function clearFeed() {
@@ -195,33 +243,13 @@ window.onload = () => {
         showToast(`Switched to ${newTheme} mode`);
     });
 
-    gsap.from(".glass-card", {
-        duration: 0.8,
-        y: 30,
-        opacity: 0,
-        stagger: 0.2,
-        ease: "power2.out"
-    });
-    
-    gsap.from(".stat-card", {
-        duration: 0.6,
-        scale: 0.9,
-        opacity: 0,
-        stagger: 0.1,
-        delay: 0.5,
-        ease: "back.out(1.7)"
-    });
+    // Zero-Flicker Premium Entrance (Guaranteed Visibility)
+    gsap.from(".header-glass", { duration: 1, y: -20, ease: "power3.out" });
+    gsap.from(".stat-card", { duration: 0.8, y: 15, stagger: 0.1, ease: "power2.out", delay: 0.2 });
+    gsap.from(".glass-card", { duration: 0.8, scale: 0.99, stagger: 0.15, ease: "power2.out", delay: 0.3 });
+    gsap.from(".workflow-step", { duration: 1, y: 20, stagger: 0.1, ease: "back.out(1.2)", delay: 0.5 });
 
-    // File Input Listeners for immediate feedback
-    document.getElementById('finalYearInp').addEventListener('change', (e) => {
-        const count = e.target.files.length;
-        document.getElementById('finalYearStatus').innerHTML = `<i class="fas fa-folder-open me-2"></i>${count} files selected. Ready to sync.`;
-        document.getElementById('finalYearStatus').className = "small mt-2 text-primary";
-    });
-
-    document.getElementById('graduationInp').addEventListener('change', (e) => {
-        const count = e.target.files.length;
-        document.getElementById('graduationStatus').innerHTML = `<i class="fas fa-folder-open me-2"></i>${count} files selected. Ready to sync.`;
-        document.getElementById('graduationStatus').className = "small mt-2 text-primary";
-    });
+    // File Input Listeners for background syncing
+    document.getElementById('finalYearInp').addEventListener('change', () => uploadFolder('final_year'));
+    document.getElementById('graduationInp').addEventListener('change', () => uploadFolder('graduation'));
 };
