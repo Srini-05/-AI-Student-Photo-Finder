@@ -7,7 +7,8 @@ import numpy as np
 import shutil
 import time
 import threading
-from flask import Flask, render_template, request, jsonify, send_from_directory
+import zipfile
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 from werkzeug.utils import secure_filename
 from concurrent.futures import ThreadPoolExecutor
 
@@ -263,6 +264,19 @@ def reset():
 def get_photo(folder, filename):
     safe_folder = OUTPUT_DIR if folder == 'output' else UNKNOWN_DIR
     return send_from_directory(safe_folder, filename)
+
+@app.route('/download_results')
+def download_results():
+    zip_path = os.path.join(os.getcwd(), 'matched_photos.zip')
+    
+    # Create a ZIP file of the output directory
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        for root, dirs, files in os.walk(OUTPUT_DIR):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, os.path.relpath(file_path, OUTPUT_DIR))
+    
+    return send_file(zip_path, as_attachment=True, download_name=f"matches_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
 
 if __name__ == '__main__':
     # Use environment port for hosting, default to 8080 for cloud standards

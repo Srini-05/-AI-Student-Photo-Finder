@@ -156,13 +156,21 @@ async function loadFinalGallery() {
 }
 
 async function resetAll() {
-    if (!confirm("This will delete all photos from training and graduation folders. Continue?")) return;
+    if (!confirm("Are you sure you want to clear the neural memory? (Files will NOT be deleted from the server)")) return;
     
-    const response = await fetch('/reset', { method: 'POST' });
-    const data = await response.json();
-    
-    showToast(data.message);
-    location.reload();
+    try {
+        const response = await fetch('/reset', { method: 'POST' });
+        const result = await response.json();
+        showToast(result.message);
+        clearFeed();
+        updateStats();
+    } catch (error) {
+        showToast("Reset failed: " + error);
+    }
+}
+
+function downloadAll() {
+    window.location.href = '/download_results';
 }
 
 function clearFeed() {
