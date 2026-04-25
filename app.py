@@ -285,4 +285,6 @@ def download_results():
     
     return send_file(zip_path, as_attachment=True, download_name=f"matches_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
 
+=======
 # Production: Gunicorn handles execution
+
