@@ -285,8 +285,3 @@ def download_results():
     
     return send_file(zip_path, as_attachment=True, download_name=f"matches_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip")
 
-if __name__ == '__main__':
-    # Use environment port for hosting, default to 8080 for cloud standards
-    port = int(os.environ.get("PORT", 8080))
-    # host='0.0.0.0' is required for cloud deployment
-    app.run(host='0.0.0.0', port=port, debug=True)
