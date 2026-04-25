@@ -1,0 +1,17 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+
+# Data Folders (Ignore the actual photos)
+final_year/*
+graduation/*
+output/*
+unknown/*
+
+# Don't ignore the empty folders themselves if you want to keep structure
+!final_year/.gitkeep
+!graduation/.gitkeep
+!output/.gitkeep
+!unknown/.gitkeep
