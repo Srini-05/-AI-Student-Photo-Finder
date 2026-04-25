@@ -25,7 +25,7 @@ COPY . .
 RUN mkdir -p final_year graduation output unknown
 
 # Expose the port
-EXPOSE 5000
+EXPOSE 8080
 
 # Start the application
 CMD ["python", "app.py"]

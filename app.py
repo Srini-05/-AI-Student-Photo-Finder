@@ -265,4 +265,7 @@ def get_photo(folder, filename):
     return send_from_directory(safe_folder, filename)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # Use environment port for hosting, default to 8080 for cloud standards
+    port = int(os.environ.get("PORT", 8080))
+    # host='0.0.0.0' is required for cloud deployment
+    app.run(host='0.0.0.0', port=port, debug=False)
